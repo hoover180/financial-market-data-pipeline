@@ -40,7 +40,7 @@ _(diagram + description coming in Phase 11)_
 
 - [x] Phase 0 — Setup & scaffold
 - [x] Phase 1 — Databricks & dbt Fundamentals Certificates
-- [ ] Phase 2 — Bronze ingestion & data contracts
+- [x] Phase 2 — Bronze ingestion & data contracts
 - [ ] Phase 3A — Silver: cleaning
 - [ ] Phase 3B — Silver: historical dimensions & corrections
 - [ ] Phase 4 — DuckDB local validation

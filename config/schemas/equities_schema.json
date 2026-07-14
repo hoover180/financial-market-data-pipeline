@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["symbol", "date", "open", "high", "low", "close", "volume"],
+  "properties": {
+    "symbol": { "type": "string" },
+    "date": { "type": "string", "format": "date" },
+    "open": { "type": "number" },
+    "high": { "type": "number" },
+    "low": { "type": "number" },
+    "close": { "type": "number" },
+    "volume": { "type": "integer", "minimum": 0 }
+  }
+}

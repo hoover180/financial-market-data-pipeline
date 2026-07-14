@@ -1,7 +1,9 @@
 dbt-databricks==1.11.*
+databricks-connect
 yfinance
 pandas
 requests
 python-dotenv
 great_expectations
 pytest
+jsonschema==4.26.0

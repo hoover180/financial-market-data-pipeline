@@ -1,0 +1,13 @@
+sources:
+  - name: equities
+    provider: yfinance
+    symbols: [SPY, QQQ, AAPL]
+    interval: 1d
+    start_date: "2020-01-01"
+    enabled: true
+
+  - name: treasury_yields
+    provider: fred
+    series: [DGS10, DGS2]
+    start_date: "2020-01-01"
+    enabled: true

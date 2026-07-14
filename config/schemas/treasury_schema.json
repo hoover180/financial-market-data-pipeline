@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["series_id", "date", "value"],
+  "properties": {
+    "series_id": { "type": "string" },
+    "date": { "type": "string", "format": "date" },
+    "value": { "type": ["number", "null"] }
+  }
+}
