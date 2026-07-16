@@ -23,10 +23,9 @@ CATALOG = "financial_market_data"
 SCHEMA = "dev"
 DEFAULT_PROFILE = "financial_market_data_pipeline"
 
-# Explicit schemas per Bronze table, rather than letting Spark infer
-# from the pandas DataFrame. This avoids Spark guessing a wrong type
-# on a partially-null column -- e.g. treasury `value`, which has real
-# gaps from FRED (holidays / unreported days).
+# Explicit schemas per Bronze table -- avoids misinference on
+# partially-null columns, e.g. treasury `value`, which has real gaps
+# from FRED (holidays / unreported days).
 BRONZE_SCHEMAS = {
     "equities": StructType([
         StructField("symbol", StringType(), False),
@@ -108,7 +107,15 @@ def write_bronze(
     close prices shift with stock splits, FRED republishes revised
     economic data -- so an append-only Bronze layer would preserve stale
     values instead of corrections. Trade-off: no run-to-run audit history
-    at this layer. See docs/data_dictionary.md for the full rationale.
+    at this layer. See docs/data_modeling_decisions.md for the full
+    load-strategy rationale.
+
+    Uses overwriteSchema (not mergeSchema): fails fast on schema drift
+    rather than silently accumulating stale columns, consistent with
+    Bronze/Silver as current-state layers (see
+    docs/data_modeling_decisions.md). Primary schema enforcement is
+    upstream in prepare_dataframe() via explicit StructType -- this is
+    the defensive second layer, not the main guarantee.
     """
     full_table_name = f"{catalog}.{schema}.bronze_{table_key}"
     spark_df = prepare_dataframe(spark, df, table_key)
@@ -119,7 +126,7 @@ def write_bronze(
         spark_df.write
         .format("delta")
         .mode(mode)
-        .option("mergeSchema", "true")
+        .option("overwriteSchema", "true")
         .saveAsTable(full_table_name)
     )
 
