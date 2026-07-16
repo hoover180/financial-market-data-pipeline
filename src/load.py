@@ -91,6 +91,41 @@ def prepare_dataframe(spark, df: pd.DataFrame, table_key: str) -> SparkDataFrame
     return spark.createDataFrame(df, schema=schema)
 
 
+def check_write_size(
+    spark, new_count: int, full_table_name: str, min_ratio: float = 0.5
+) -> None:
+    """
+    Aborts the write if new_count is suspiciously small relative to the
+    table's current row count -- guards against a malformed or
+    rate-limited extraction silently overwriting good history, per the
+    known risk documented in docs/data_modeling_decisions.md. No-op on
+    the table's first write or if the existing table is empty, since
+    there's nothing to compare against.
+
+    min_ratio=0.5 is a judgment call, not derived from the data --
+    generous enough to tolerate legitimate variance (e.g. a
+    holiday-shortened trading week) while still catching a genuinely
+    partial extraction. Does not catch a same-row-count extraction with
+    corrupted values -- that class of error is Great Expectations'
+    job (Phase 6), not this guard's.
+    """
+    try:
+        existing_count = spark.table(full_table_name).count()
+    except Exception:
+        return
+
+    if existing_count == 0:
+        return
+
+    if new_count < existing_count * min_ratio:
+        raise ValueError(
+            f"{full_table_name}: incoming row count ({new_count}) is below "
+            f"{min_ratio:.0%} of current row count ({existing_count}). "
+            f"Aborting write to avoid overwriting good history with a "
+            f"partial extraction."
+        )
+
+
 def write_bronze(
     spark,
     df: pd.DataFrame,
@@ -98,6 +133,7 @@ def write_bronze(
     catalog: str = CATALOG,
     schema: str = SCHEMA,
     mode: str = "overwrite",
+    min_write_ratio: float = 0.5,
 ) -> dict:
     """
     Writes a DataFrame to a Bronze Delta table in Unity Catalog.
@@ -116,11 +152,16 @@ def write_bronze(
     docs/data_modeling_decisions.md). Primary schema enforcement is
     upstream in prepare_dataframe() via explicit StructType -- this is
     the defensive second layer, not the main guarantee.
+
+    check_write_size() runs before the write commits, guarding against
+    the bad-extraction risk documented in docs/data_modeling_decisions.md
+    -- see that function's docstring for the min_write_ratio rationale.
     """
     full_table_name = f"{catalog}.{schema}.bronze_{table_key}"
     spark_df = prepare_dataframe(spark, df, table_key)
 
     row_count = spark_df.count()
+    check_write_size(spark, row_count, full_table_name, min_ratio=min_write_ratio)
 
     (
         spark_df.write
