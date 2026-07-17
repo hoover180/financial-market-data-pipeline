@@ -1,6 +1,6 @@
 # Data Dictionary
 
-_Financial Market Data Pipeline · Phase 3A · Last updated 2026-07-16_
+_Financial Market Data Pipeline · Phase 3A · Last updated 2026-07-17_
 
 ---
 
@@ -110,3 +110,84 @@ _Financial Market Data Pipeline · Phase 3A · Last updated 2026-07-16_
 - **Ad hoc Bronze validation (post-load, 2026-07-14):** Ran manual checks for duplicate primary keys, OHLC internal consistency (low ≤ open/close ≤ high), negative/zero prices, treasury null rate, and date-gap continuity. All passed: zero duplicate PKs, zero OHLC violations, zero negative/zero values, treasury null rate 4.23% on both series (consistent with federal holiday coverage — FRED's daily series already excludes weekends), zero gaps over 5 days in equities trading dates. This was a manual spot-check, not the formal Great Expectations framework — that's Phase 6. Formalized into a rerunnable script in Phase 3A — see below.
 - **Ad hoc Silver validation (post-transform, 2026-07-16):** Ran via `tests/verify.py`, which formalizes this check and the Bronze check above into one rerunnable script (`verify_bronze()` / `verify_silver()`), rather than the untracked manual spot-check the Bronze validation originally was. Checks: row count parity vs. Bronze, duplicate primary keys, treasury null rate, and Silver schema nullability. All passed: row counts match Bronze exactly (4,920 equities / 3,408 treasury — zero rows dropped), zero duplicate PKs, treasury null rate unchanged at 4.23% on both series, and `symbol`/`date` / `series_id`/`date` confirmed `nullable = false` after `sql/silver_constraints.sql` was applied. Still a manual spot-check, not the formal Great Expectations framework — that's Phase 6.
 - **Bronze nullability gap (found and resolved, 2026-07-16):** `load.py`'s `BRONZE_SCHEMAS` has always declared `symbol`/`date` and `series_id`/`date` as non-nullable, but that declaration only enforces types at write time — it does not tighten nullability on an already-existing Delta table, since Delta's `overwriteSchema=true` allows adding columns or widening types but not narrowing an existing column's nullability. As a result, both Bronze tables silently carried `nullable = true` on their key columns despite the code's declared intent, undetected because `verify_bronze()` didn't originally include a schema check. Found while building the equivalent Silver fix (`sql/silver_constraints.sql`) and generalized back to Bronze via `sql/bronze_constraints.sql`; `verify_bronze()` was extended with a schema check in the same pass to close the detection gap going forward. Confirmed resolved via live `printSchema()` — both tables now show `nullable = false` on their key columns.
+
+---
+
+## Dimension Layer
+
+### `financial_market_data.dev.dim_securities`
+
+- **Source:** `bronze_dim_securities_snapshot` (yfinance `Ticker.info`, extracted via `src/extract_reference.py`)
+- **Grain:** One row per distinct version of a security's reference attributes — a security with N attribute changes has N+1 rows
+- **Primary key:** `security_key` (random UUID, surrogate) — natural/business key is `symbol`, see `data_modeling_decisions.md` for the natural-key limitation and rationale
+- **Row count:** 5 (3 current + 2 expired, as of 2026-07-17 — reflects one manufactured test transition on AAPL plus one genuine self-correction; see `data_modeling_decisions.md`)
+- **Load strategy:** Append-only (SCD Type 2) — a deliberate exception to the Bronze/Silver full-replace convention; see `data_modeling_decisions.md` for full rationale.
+
+| Column           | Type    | Nullable | Notes                                                                                                                  |
+| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `security_key`   | string  | no       | Surrogate PK, random UUID — see `data_modeling_decisions.md`                                                           |
+| `symbol`         | string  | no       | Natural/business key; limitation documented in `data_modeling_decisions.md`                                            |
+| `company_name`   | string  | yes      | From yfinance `longName`/`shortName`                                                                                   |
+| `sector`         | string  | yes      | `NULL` for ETFs (SPY, QQQ) by design — not a data quality issue                                                        |
+| `exchange`       | string  | yes      | Yahoo's internal exchange code (e.g. `NMS`, `PCX`)                                                                     |
+| `asset_type`     | string  | yes      | `EQUITY` / `ETF`, from yfinance `quoteType`                                                                            |
+| `effective_date` | date    | yes      | When this version became active                                                                                        |
+| `end_date`       | date    | yes      | `NULL` if current; set to `effective_date - 1` of the superseding version on expiry — see `data_modeling_decisions.md` |
+| `is_current`     | boolean | yes      | Exactly one `true` row per `symbol`, enforced via `tests/verify.py`'s `verify_dim_securities`                          |
+
+**Notes:**
+
+- SCD2 merge logic lives in `src/transform_dim_securities.py` (`apply_scd2_dim_securities`) — separate from `transform.py`, since this is a stateful dimension merge, not a stateless per-batch clean.
+- Validated via a 3-run test sequence against the real extraction pipeline; two real bugs found and fixed during testing (null-safe comparison logic, surrogate key collision) — full account in `data_modeling_decisions.md`.
+- Regression-checked via `tests/verify.py`'s `verify_dim_securities()`: asserts exactly one current row per symbol, no symbol missing a current row, no expired row with a null `end_date`, no current row with a non-null `end_date`.
+
+---
+
+### `financial_market_data.dev.bronze_dim_securities_snapshot`
+
+- **Source:** yfinance `Ticker.info`, one snapshot per run
+- **Grain:** One row per symbol, as of the most recent extraction
+- **Primary key:** `symbol` — no surrogate key at this layer; this is a raw landing snapshot, not a modeled dimension
+- **Row count:** 3 (matches `config/sources.yml`'s equities symbol list)
+- **Load strategy:** Full-replace (`overwrite`), consistent with Bronze convention — see `data_modeling_decisions.md`. `write_bronze()`'s `check_write_size()` guard is called with `min_write_ratio=0.99` here rather than the default `0.5`, since this table's correct row count is known exactly from `sources.yml`, not estimated from trend.
+
+| Column          | Type   | Nullable | Notes                                              |
+| --------------- | ------ | -------- | -------------------------------------------------- |
+| `symbol`        | string | no       |                                                    |
+| `company_name`  | string | yes      |                                                    |
+| `sector`        | string | yes      | `NULL` for ETFs by design                          |
+| `exchange`      | string | yes      |                                                    |
+| `asset_type`    | string | yes      | `EQUITY` / `ETF`                                   |
+| `snapshot_date` | date   | yes      | Date of extraction, not a trading/observation date |
+
+**Notes:**
+
+- Extraction logic in `src/extract_reference.py` — separate from `extract.py`, since this pulls point-in-time reference attributes, not recurring price/yield time series.
+- This is the **input** to `dim_securities`'s SCD2 merge, not itself a modeled dimension — no `is_current`/`effective_date` logic at this layer.
+
+---
+
+## Audit Layer
+
+### `financial_market_data.dev.correction_log`
+
+- **Source:** Derived — written by `src/apply_corrections.py` (`detect_and_apply_corrections`), not extracted from an upstream API
+- **Grain:** One row per corrected field, per (symbol, date), per correction run — not one row per corrected record
+- **Primary key:** None enforced; append-only audit trail, not a queryable dimension
+- **Row count:** 5 (as of 2026-07-17, from one genuine vendor revision — see Notes)
+- **Load strategy:** Append-only — every detected correction is logged permanently, never overwritten.
+
+| Column          | Type      | Nullable | Notes                                                                          |
+| --------------- | --------- | -------- | ------------------------------------------------------------------------------ |
+| `symbol`        | string    | no       |                                                                                |
+| `date`          | date      | no       | The historical trading date whose value was corrected, not the correction date |
+| `field_changed` | string    | no       | One of `open`, `high`, `low`, `close`, `volume`                                |
+| `old_value`     | string    | yes      | Cast to string — source columns span multiple types (double, long)             |
+| `new_value`     | string    | yes      | Cast to string, same reason as `old_value`                                     |
+| `corrected_at`  | timestamp | no       | When the correction was detected and applied, UTC                              |
+
+**Notes:**
+
+- Correction detection is windowed (trailing 30 days from run date), not full-history — see `data_modeling_decisions.md` for rationale.
+- `old_value`/`new_value` are cast to string rather than kept in their native types, since a single log table spans corrections to `double` (`open`/`high`/`low`/`close`) and `long` (`volume`) columns.
+- First live run (2026-07-17) detected a genuine yfinance revision to `volume` (AAPL, QQQ, SPY) and `high` (QQQ, SPY) for 2026-07-14, three trading days prior — not a synthetic test artifact. Full account, including why a synthetic mutation test was deemed unnecessary given this result, in `data_modeling_decisions.md`.
