@@ -41,6 +41,14 @@ BRONZE_SCHEMAS = {
         StructField("date", DateType(), False),
         StructField("value", DoubleType(), True),
     ]),
+    "dim_securities_snapshot": StructType([
+        StructField("symbol", StringType(), False),
+        StructField("company_name", StringType(), True),
+        StructField("sector", StringType(), True),        # null for ETFs, expected
+        StructField("exchange", StringType(), True),
+        StructField("asset_type", StringType(), True),
+        StructField("snapshot_date", DateType(), True),
+    ]),
 }
 
 
@@ -86,7 +94,9 @@ def prepare_dataframe(spark, df: pd.DataFrame, table_key: str) -> SparkDataFrame
         raise ValueError(f"{table_key}: missing expected columns {missing}")
 
     df = df[expected_cols].copy()
-    df["date"] = pd.to_datetime(df["date"]).dt.date
+    date_cols = [f.name for f in schema.fields if isinstance(f.dataType, DateType)]
+    for col in date_cols:
+        df[col] = pd.to_datetime(df[col]).dt.date
 
     return spark.createDataFrame(df, schema=schema)
 
