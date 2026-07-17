@@ -42,7 +42,7 @@ _(diagram + description coming in Phase 11)_
 - [x] Phase 1 — Databricks & dbt Fundamentals Certificates
 - [x] Phase 2 — Bronze ingestion & data contracts
 - [x] Phase 3A — Silver: cleaning
-- [ ] Phase 3B — Silver: historical dimensions & corrections
+- [x] Phase 3B — Silver: historical dimensions & corrections
 - [ ] Phase 4 — DuckDB local validation
 - [ ] Phase 5 — dbt + Gold layer
 - [ ] Phase 6 — Great Expectations
