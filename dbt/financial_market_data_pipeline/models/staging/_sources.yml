@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: silver
+    database: financial_market_data
+    schema: dev
+    tables:
+      - name: silver_equities
+        description: Daily OHLCV equities data, corrected for late-arriving revisions via Delta MERGE.
+      - name: silver_treasury_yields
+        description: Daily Treasury yield series from FRED.
+      - name: dim_securities
+        description: SCD2 security reference dimension (company_name, sector, exchange, asset_type).
+      - name: correction_log
+        description: Audit trail of late-arriving corrections applied to silver_equities.
