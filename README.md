@@ -15,7 +15,54 @@
 
 ## Architecture
 
-_(diagram + description coming in Phase 11)_
+```mermaid
+flowchart LR
+    subgraph Sources
+        YF[yfinance API]
+        FRED[FRED API]
+    end
+
+    subgraph Bronze[Bronze - done]
+        BE[bronze_equities]
+        BD[bronze_dim_securities_snapshot]
+        BT[bronze_treasury_yields]
+    end
+
+    subgraph Silver[Silver - done]
+        SE[silver_equities]
+        DS[dim_securities - SCD2]
+        CL[correction_log]
+        ST[silver_treasury_yields]
+    end
+
+    subgraph Gold[Gold - Phase 5, not started]
+        G[dbt marts]
+    end
+
+    subgraph Local[Local Dev]
+        DDB[(DuckDB mirror)]
+    end
+
+    YF --> BE --> SE
+    FRED --> BT --> ST
+    YF --> BD --> DS
+    SE -.corrections.-> CL
+    SE -.-> G
+    ST -.-> G
+    Bronze -.mirror.-> DDB
+    Silver -.mirror.-> DDB
+
+    style Gold fill:#2a2a2a,stroke:#555,color:#888
+```
+
+_Full architecture writeup with engineering decisions coming in Phase 11._
+
+### Local Development
+
+Bronze/Silver/Dimension/Audit tables are mirrored into a local DuckDB file
+for dev-loop validation, avoiding serverless compute costs on every query
+during active development. Read-only mirror, refreshed on demand via
+`src/mirror_to_duckdb.py`.
 
 ## Tech Stack
 
@@ -43,7 +90,7 @@ _(diagram + description coming in Phase 11)_
 - [x] Phase 2 — Bronze ingestion & data contracts
 - [x] Phase 3A — Silver: cleaning
 - [x] Phase 3B — Silver: historical dimensions & corrections
-- [ ] Phase 4 — DuckDB local validation
+- [x] Phase 4 — DuckDB local validation
 - [ ] Phase 5 — dbt + Gold layer
 - [ ] Phase 6 — Great Expectations
 - [ ] Phase 7 — Terraform

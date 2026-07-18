@@ -118,3 +118,25 @@ Both bugs were real and would not have been caught by code review alone — the 
 **Validation: caught a real correction on first live run.** The baseline run — intended only to confirm zero corrections against a freshly-loaded table — instead detected and correctly applied a genuine vendor revision: yfinance's `volume` figures for AAPL, QQQ, and SPY, and `high` figures for QQQ and SPY, were revised for 2026-07-14 (three trading days prior) between initial load and this run, consistent with known consolidated-tape settling behavior. All five field-level changes were logged to `correction_log` with old/new values and correctly applied to `silver_equities` via MERGE. Verified by direct query against both the log and the corrected table.
 
 This is stronger validation than a synthetic test would have provided — the detection logic proved itself against real, unstaged vendor behavior on its first production run, not fabricated input. A synthetic mutation-and-revert test was planned but deemed unnecessary: it would have re-exercised comparison/MERGE logic that is identical (same `eqNullSafe` condition, same `update_set` construction) regardless of which field changes, and would have required introducing and then cleaning up fabricated data in a table with no lasting artifact to show for it, since the mutation was never going to be checked into the codebase.
+
+---
+
+## DuckDB Local Validation Layer
+
+**Decision:** Mirror all 7 Delta tables (Bronze, Silver, Dimension, Audit) into
+a local DuckDB file (`data/local_dev.duckdb`) via a full-replace refresh script
+(`src/mirror_to_duckdb.py`), rather than querying Databricks directly for every
+dev-loop iteration.
+
+**Rationale:** Cost-conscious engineering — local validation avoids spinning up
+serverless SQL warehouse compute for every ad hoc query during active
+development. This is a read-only mirror, never a second source of truth; no
+writes ever flow back from DuckDB to Delta.
+
+**Refresh pattern:** `CREATE OR REPLACE TABLE` per table — consistent with the
+project's existing full-replace convention for Bronze/Silver (fails fast on
+schema drift rather than silently accumulating stale state from a partial
+sync).
+
+**Verification:** `tests/verify_duckdb_mirror.py` confirms row-count parity
+between the local mirror and source Delta tables after each mirror run.
