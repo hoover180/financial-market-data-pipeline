@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: fct_daily_returns
+    description: Daily return per symbol, calculated from stg_equities close prices.
+    columns:
+      - name: symbol
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_securities_current')
+              field: symbol
+      - name: date
+        tests:
+          - not_null
+      - name: daily_return
+        # First trading day per symbol is legitimately null (no prior close) —
+        # do not add not_null here.
+        tests: []
+
+  - name: fct_market_yield_daily
+    description: Daily equity returns joined against same-day Treasury 10Y yield changes.
+    columns:
+      - name: symbol
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+
+  - name: dim_securities_current
+    description: Current-state (is_current=true) slice of the SCD2 security dimension.
+    columns:
+      - name: symbol
+        tests:
+          - unique
+          - not_null
+      - name: security_key
+        tests:
+          - unique
+          - not_null
+      - name: asset_type
+        tests:
+          - accepted_values:
+              values: ["EQUITY", "ETF"]
