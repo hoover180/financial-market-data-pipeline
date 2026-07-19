@@ -35,7 +35,7 @@ flowchart LR
         ST[silver_treasury_yields]
     end
 
-    subgraph Gold[Gold - Phase 5, not started]
+    subgraph Gold[Gold - done]
         G[dbt marts]
     end
 
@@ -51,8 +51,6 @@ flowchart LR
     ST -.-> G
     Bronze -.mirror.-> DDB
     Silver -.mirror.-> DDB
-
-    style Gold fill:#2a2a2a,stroke:#555,color:#888
 ```
 
 _Full architecture writeup with engineering decisions coming in Phase 11._
@@ -91,7 +89,7 @@ during active development. Read-only mirror, refreshed on demand via
 - [x] Phase 3A — Silver: cleaning
 - [x] Phase 3B — Silver: historical dimensions & corrections
 - [x] Phase 4 — DuckDB local validation
-- [ ] Phase 5 — dbt + Gold layer
+- [x] Phase 5 — dbt + Gold layer
 - [ ] Phase 6 — Great Expectations
 - [ ] Phase 7 — Terraform
 - [ ] Phase 8 — Airflow orchestration
