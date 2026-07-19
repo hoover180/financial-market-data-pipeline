@@ -123,20 +123,30 @@ This is stronger validation than a synthetic test would have provided — the de
 
 ## DuckDB Local Validation Layer
 
-**Decision:** Mirror all 7 Delta tables (Bronze, Silver, Dimension, Audit) into
-a local DuckDB file (`data/local_dev.duckdb`) via a full-replace refresh script
-(`src/mirror_to_duckdb.py`), rather than querying Databricks directly for every
-dev-loop iteration.
+**Decision:** Mirror all 7 Delta tables (Bronze, Silver, Dimension, Audit) into a local DuckDB file (`data/local_dev.duckdb`) via a full-replace refresh script (`src/mirror_to_duckdb.py`), rather than querying Databricks directly for every dev-loop iteration.
 
-**Rationale:** Cost-conscious engineering — local validation avoids spinning up
-serverless SQL warehouse compute for every ad hoc query during active
-development. This is a read-only mirror, never a second source of truth; no
-writes ever flow back from DuckDB to Delta.
+**Rationale:** Cost-conscious engineering — local validation avoids spinning up serverless SQL warehouse compute for every ad hoc query during active development. This is a read-only mirror, never a second source of truth; no writes ever flow back from DuckDB to Delta.
 
-**Refresh pattern:** `CREATE OR REPLACE TABLE` per table — consistent with the
-project's existing full-replace convention for Bronze/Silver (fails fast on
-schema drift rather than silently accumulating stale state from a partial
-sync).
+**Refresh pattern:** `CREATE OR REPLACE TABLE` per table — consistent with the project's existing full-replace convention for Bronze/Silver (fails fast on schema drift rather than silently accumulating stale state from a partial sync).
 
-**Verification:** `tests/verify_duckdb_mirror.py` confirms row-count parity
-between the local mirror and source Delta tables after each mirror run.
+**Verification:** `tests/verify_duckdb_mirror.py` confirms row-count parity between the local mirror and source Delta tables after each mirror run.
+
+---
+
+## Gold Marts — Daily Returns & Treasury Yield Join
+
+**Grain (`fct_daily_returns`):** One row per symbol per trading day. Daily return is calculated via `LAG(close)` partitioned by symbol, ordered by date. The first trading day per symbol has a null `daily_return` by design — no prior close exists to compare against — and is deliberately excluded from the `not_null` dbt test on that column rather than backfilled or defaulted.
+
+**Join logic (`fct_market_yield_daily`):** LEFT JOIN of `fct_daily_returns` against `stg_treasury_yields`, filtered to `series_id = 'DGS10'` (10-year Treasury — confirmed as the correct series alongside `DGS2` via direct query against `silver_treasury_yields`, not assumed from `sources.yml` alone). LEFT JOIN was chosen over INNER to guarantee every equity return row is preserved even on a date with no matching yield record. Verified, not assumed: row counts match exactly across both marts (4,920 rows — 3 symbols × 1,640 trading days each).
+
+---
+
+## Deferred: Local Unit Testing for `transform.py`
+
+**Constraint:** `transform.py`'s functions (`transform_equities`, `transform_treasury`, `check_not_null`) take a DataFrame in and return a DataFrame out — no direct Spark session calls inside them. Despite that, they aren't unit tested locally: this project's Spark access is via `databricks-connect`, which only supports remote sessions against the live Databricks warehouse, with no local/offline session available to build a test DataFrame.
+
+**Alternative considered and rejected:** running these tests against the real warehouse. This was rejected as slow, dependent on live cloud auth, and costing compute per run — turning a unit test into an integration test in practice.
+
+**Path forward, not pursued:** a separate test-only environment with plain, non-Databricks `pyspark` would restore local testing with no code changes required, since the functions are already structured to accept and return a DataFrame. Deferred as not worth the added maintenance at this project's current size; worth revisiting if transformation logic grows materially more complex.
+
+**Correctness today** is covered by `tests/verify.py` (real-data checks against actual pipeline output) and `dbt test` (10 passing tests on the Gold marts).
