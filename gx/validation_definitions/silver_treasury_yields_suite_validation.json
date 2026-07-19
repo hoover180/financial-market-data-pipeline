@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "78ba9353-1215-43bd-8970-4b278c36d5b7",
+      "name": "silver_treasury_yields_asset"
+    },
+    "batch_definition": {
+      "id": "0f011dc4-0290-4b8f-b492-2c63309f96e8",
+      "name": "silver_treasury_yields_batch"
+    },
+    "datasource": {
+      "id": "be447035-bdbc-4008-8da6-4b9f939ad806",
+      "name": "databricks_datasource"
+    }
+  },
+  "id": "071307d4-2e78-4b15-8c34-9d4d81944d77",
+  "name": "silver_treasury_yields_suite_validation",
+  "suite": {
+    "id": "413fd1ca-f5c2-4328-b4d4-0923858dc3c1",
+    "name": "silver_treasury_yields_suite"
+  }
+}

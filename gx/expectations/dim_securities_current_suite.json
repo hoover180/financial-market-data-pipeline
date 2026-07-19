@@ -1,0 +1,41 @@
+{
+  "expectations": [
+    {
+      "id": "6bebb5a3-328c-41c4-877f-c0caff87c28e",
+      "kwargs": {
+        "value": 3
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_equal"
+    },
+    {
+      "id": "780e1aae-7349-4265-bb03-61c8ff35caf7",
+      "kwargs": {
+        "column": "asset_type",
+        "value_set": [
+          "EQUITY",
+          "ETF"
+        ]
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "id": "a596e330-8fd8-4777-b67b-7df122afe4e0",
+      "kwargs": {
+        "column": "symbol"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_unique"
+    }
+  ],
+  "id": "6414acc3-ae5c-40d0-bf3e-c604e54d1190",
+  "meta": {
+    "great_expectations_version": "1.19.0"
+  },
+  "name": "dim_securities_current_suite",
+  "notes": null
+}

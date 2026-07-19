@@ -1,10 +1,18 @@
+# Databricks / dbt
 dbt-databricks==1.11.*
 databricks-connect
+databricks-sqlalchemy      # SQL access for Great Expectations (separate from databricks-connect's Spark session)
+ 
+# Data sources
 yfinance
 pandas
 requests
-python-dotenv
-great_expectations
-pytest
-jsonschema==4.26.0
 duckdb
+ 
+# Config & validation
+python-dotenv
+jsonschema==4.26.0
+great_expectations
+ 
+# Testing
+pytest

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "80705e1e-6e27-4f84-aff7-bfd1e4e3f857",
+      "name": "silver_equities_asset"
+    },
+    "batch_definition": {
+      "id": "e55e8729-1144-4443-84e8-1db323d7ac84",
+      "name": "silver_equities_batch"
+    },
+    "datasource": {
+      "id": "be447035-bdbc-4008-8da6-4b9f939ad806",
+      "name": "databricks_datasource"
+    }
+  },
+  "id": "de2ddafc-8b61-4489-9b3a-af1b5fa7ca37",
+  "name": "silver_equities_suite_validation",
+  "suite": {
+    "id": "2714fde1-47e1-4122-8965-06b10a491cb1",
+    "name": "silver_equities_suite"
+  }
+}

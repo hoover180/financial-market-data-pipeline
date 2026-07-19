@@ -1,0 +1,31 @@
+{
+  "expectations": [
+    {
+      "id": "eb9ab030-de73-4181-84f0-633b2245ef86",
+      "kwargs": {
+        "value": 4920
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_equal"
+    },
+    {
+      "id": "4dae5cc3-cdd0-4334-ae00-acbfb073be5c",
+      "kwargs": {
+        "column": "daily_return",
+        "max_value": 0.5,
+        "min_value": -0.5,
+        "mostly": 0.99
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    }
+  ],
+  "id": "690ce069-745d-49c2-816e-b1c9cd975673",
+  "meta": {
+    "great_expectations_version": "1.19.0"
+  },
+  "name": "fct_daily_returns_suite",
+  "notes": null
+}

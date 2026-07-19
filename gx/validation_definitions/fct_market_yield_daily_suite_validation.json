@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "bcb8c3d1-bfae-4c6b-939b-3434595900b2",
+      "name": "fct_market_yield_daily_asset"
+    },
+    "batch_definition": {
+      "id": "5b8507ca-fd5e-4db8-b985-ca236f6786bb",
+      "name": "fct_market_yield_daily_batch"
+    },
+    "datasource": {
+      "id": "be447035-bdbc-4008-8da6-4b9f939ad806",
+      "name": "databricks_datasource"
+    }
+  },
+  "id": "46de1ee4-f7a0-4d39-bca0-4aa7b45e759a",
+  "name": "fct_market_yield_daily_suite_validation",
+  "suite": {
+    "id": "cd67d627-478e-44dc-90dc-285fd7f2f528",
+    "name": "fct_market_yield_daily_suite"
+  }
+}

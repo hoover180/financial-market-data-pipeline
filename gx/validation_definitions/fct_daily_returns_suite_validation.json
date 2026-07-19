@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "aa2a8469-559d-48b8-b2fc-ce550dc1072e",
+      "name": "fct_daily_returns_asset"
+    },
+    "batch_definition": {
+      "id": "234bf0d2-07f6-4fdc-b846-e1c9e1521dda",
+      "name": "fct_daily_returns_batch"
+    },
+    "datasource": {
+      "id": "be447035-bdbc-4008-8da6-4b9f939ad806",
+      "name": "databricks_datasource"
+    }
+  },
+  "id": "a31f1fb3-07db-43e7-9fd7-624f209753fe",
+  "name": "fct_daily_returns_suite_validation",
+  "suite": {
+    "id": "690ce069-745d-49c2-816e-b1c9cd975673",
+    "name": "fct_daily_returns_suite"
+  }
+}

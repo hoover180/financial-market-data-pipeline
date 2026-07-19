@@ -1,0 +1,28 @@
+{
+  "actions": [],
+  "id": "f0cc5e52-c6c6-4426-a597-4509cbb4ec49",
+  "name": "financial_market_data_checkpoint",
+  "result_format": "SUMMARY",
+  "validation_definitions": [
+    {
+      "id": "de2ddafc-8b61-4489-9b3a-af1b5fa7ca37",
+      "name": "silver_equities_suite_validation"
+    },
+    {
+      "id": "071307d4-2e78-4b15-8c34-9d4d81944d77",
+      "name": "silver_treasury_yields_suite_validation"
+    },
+    {
+      "id": "a31f1fb3-07db-43e7-9fd7-624f209753fe",
+      "name": "fct_daily_returns_suite_validation"
+    },
+    {
+      "id": "46de1ee4-f7a0-4d39-bca0-4aa7b45e759a",
+      "name": "fct_market_yield_daily_suite_validation"
+    },
+    {
+      "id": "4e34a771-a75a-44bd-a91a-fd540b218b43",
+      "name": "dim_securities_current_suite_validation"
+    }
+  ]
+}

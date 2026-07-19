@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "id": "8bf0b6ed-b6d4-4557-840b-60ba17d8bfe9",
+      "kwargs": {
+        "value": 4920
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_equal"
+    },
+    {
+      "id": "3c83eccb-e128-4dc3-b856-28c399fe12cc",
+      "kwargs": {
+        "column": "treasury_10y_yield",
+        "max_value": 20.0,
+        "min_value": 0.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    }
+  ],
+  "id": "cd67d627-478e-44dc-90dc-285fd7f2f528",
+  "meta": {
+    "great_expectations_version": "1.19.0"
+  },
+  "name": "fct_market_yield_daily_suite",
+  "notes": null
+}

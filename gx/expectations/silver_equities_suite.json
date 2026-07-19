@@ -1,0 +1,58 @@
+{
+  "expectations": [
+    {
+      "id": "c45fbc04-2589-4899-825d-11ae2d447d84",
+      "kwargs": {
+        "column": "symbol"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "0187114e-b738-4ae1-a6e8-5bf5fac209a2",
+      "kwargs": {
+        "column": "date"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "9a05cafe-c77c-4dce-a230-985ea759f33d",
+      "kwargs": {
+        "column": "close",
+        "min_value": 0.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "8868a9f2-36ef-4941-815d-f184f8eda850",
+      "kwargs": {
+        "column": "volume",
+        "min_value": 0.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "id": "a35cf6f5-a8ba-4a56-997f-ee70a8ab5357",
+      "kwargs": {
+        "column": "date",
+        "min_value": "2026-07-12"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_max_to_be_between"
+    }
+  ],
+  "id": "2714fde1-47e1-4122-8965-06b10a491cb1",
+  "meta": {
+    "great_expectations_version": "1.19.0"
+  },
+  "name": "silver_equities_suite",
+  "notes": null
+}

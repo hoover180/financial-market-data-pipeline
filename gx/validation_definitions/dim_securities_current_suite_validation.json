@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "5658cbc3-21aa-4ab0-9ab8-258a5fdd3b2e",
+      "name": "dim_securities_current_asset"
+    },
+    "batch_definition": {
+      "id": "d7cedfd1-94b4-4c19-8fcc-366421d70a72",
+      "name": "dim_securities_current_batch"
+    },
+    "datasource": {
+      "id": "be447035-bdbc-4008-8da6-4b9f939ad806",
+      "name": "databricks_datasource"
+    }
+  },
+  "id": "4e34a771-a75a-44bd-a91a-fd540b218b43",
+  "name": "dim_securities_current_suite_validation",
+  "suite": {
+    "id": "6414acc3-ae5c-40d0-bf3e-c604e54d1190",
+    "name": "dim_securities_current_suite"
+  }
+}
