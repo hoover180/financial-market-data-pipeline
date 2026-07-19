@@ -150,3 +150,19 @@ This is stronger validation than a synthetic test would have provided — the de
 **Path forward, not pursued:** a separate test-only environment with plain, non-Databricks `pyspark` would restore local testing with no code changes required, since the functions are already structured to accept and return a DataFrame. Deferred as not worth the added maintenance at this project's current size; worth revisiting if transformation logic grows materially more complex.
 
 **Correctness today** is covered by `tests/verify.py` (real-data checks against actual pipeline output) and `dbt test` (10 passing tests on the Gold marts).
+
+---
+
+## Great Expectations — Execution Engine and Scope
+
+**Decision: SQL execution engine, not Spark.** Great Expectations' `SparkDFExecutionEngine` expects a local/classic Spark session. This project's Spark access is via `databricks-connect`, which only supports remote sessions against the live Databricks warehouse — the same constraint documented above under "Deferred: Local Unit Testing for `transform.py`." Rather than fight that constraint a second time, GE is configured with a SQL datasource (`add_or_update_databricks_sql`) that queries Unity Catalog tables directly via `databricks-sql-connector`, consistent with this project's established pattern of validating against real data over forcing a mismatched tool into an environment it wasn't built for.
+
+**Decision: five consumer-facing tables, not all seven.** `silver_equities`, `silver_treasury_yields`, `fct_daily_returns`, `fct_market_yield_daily`, and `dim_securities_current` receive GE suites. `correction_log` and the raw `dim_securities` SCD2 table are excluded: `correction_log` is an audit trail with no downstream consumer, and `dim_securities`'s SCD2 integrity is already fully covered by `tests/verify.py`. Adding GE suites to either would duplicate existing coverage without adding signal.
+
+**Decision: freshness and range checks, not duplicated uniqueness/not-null coverage.** `dbt test`'s 10 passing tests and `tests/verify.py` already cover uniqueness, not-null, and referential integrity. GE's distinct value here is freshness (max date within a rolling window — nothing else in the project checks staleness) and range/set-membership checks GE expresses more naturally than a dbt test (e.g., `expect_column_values_to_be_between` on `close`, `value`, `daily_return`, `treasury_10y_yield`). This scoping decision was made explicitly before writing checks, consistent with how every other phase in this project has approached tool selection.
+
+**Validation artifact:** all five suites pass (`success: true`, 5/5 validations, 15/15 expectations) against live Databricks data. Data Docs screenshots saved to `docs/screenshots/great_expectations_report.png` (validation results summary) and `docs/screenshots/great_expectations_silver_equities_suite.png` (example suite definition, showing the full rule set as GE renders it).
+
+**Decision: secrets via `gx/uncommitted/config_variables.yml`, not embedded in the connection string.** An initial attempt to reference `${DBT_DATABRICKS_TOKEN}` directly inside the Python-constructed connection string resulted in GE resolving and writing the literal token to the committed `great_expectations.yml` regardless — GE's Fluent API resolves the full connection string against the environment at datasource-creation time (to validate connectivity) and serializes the resolved result back to disk, not the original template. The documented mechanism is instead to define the credential in `config_variables.yml` (itself excluded from git by GE's default `.gitignore`, and itself sourcing `${DBT_DATABRICKS_TOKEN}` from the environment) and reference it via `${DATABRICKS_TOKEN}` in the connection string. Confirmed working via direct pattern search on the committed file (`dapi` absent, `${DATABRICKS_TOKEN}` present, unresolved) before committing.
+
+---

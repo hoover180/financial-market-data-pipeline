@@ -39,6 +39,10 @@ flowchart LR
         G[dbt marts]
     end
 
+    subgraph Quality[Data Quality - done]
+        GE[Great Expectations]
+    end
+
     subgraph Local[Local Dev]
         DDB[(DuckDB mirror)]
     end
@@ -49,6 +53,9 @@ flowchart LR
     SE -.corrections.-> CL
     SE -.-> G
     ST -.-> G
+    SE -.checks.-> GE
+    ST -.checks.-> GE
+    G -.checks.-> GE
     Bronze -.mirror.-> DDB
     Silver -.mirror.-> DDB
 ```
@@ -61,6 +68,27 @@ Bronze/Silver/Dimension/Audit tables are mirrored into a local DuckDB file
 for dev-loop validation, avoiding serverless compute costs on every query
 during active development. Read-only mirror, refreshed on demand via
 `src/mirror_to_duckdb.py`.
+
+### Data Quality
+
+Five consumer-facing tables — `silver_equities`, `silver_treasury_yields`,
+`fct_daily_returns`, `fct_market_yield_daily`, and `dim_securities_current`
+— are validated on demand via Great Expectations, running directly against
+Databricks SQL. Coverage is deliberately scoped to freshness and range/set
+checks that complement, rather than duplicate, the uniqueness/not-null/
+referential-integrity coverage already provided by `dbt test` (10 passing
+tests) and `tests/verify.py`.
+
+<p>
+<img src="./docs/screenshots/great_expectations_report.png" alt="Great Expectations validation results">
+</p>
+
+<p>
+<img src="./docs/screenshots/great_expectations_silver_equities_suite.png" alt="Great Expectations suite definition example">
+</p>
+
+Full rationale — execution engine choice, table/check scoping — in
+`docs/data_modeling_decisions.md`.
 
 ## Tech Stack
 
@@ -90,7 +118,7 @@ during active development. Read-only mirror, refreshed on demand via
 - [x] Phase 3B — Silver: historical dimensions & corrections
 - [x] Phase 4 — DuckDB local validation
 - [x] Phase 5 — dbt + Gold layer
-- [ ] Phase 6 — Great Expectations
+- [x] Phase 6 — Great Expectations
 - [ ] Phase 7 — Terraform
 - [ ] Phase 8 — Airflow orchestration
 - [ ] Phase 9 — CI/CD
