@@ -2,6 +2,13 @@
 data/*.duckdb
 data/*.duckdb.wal
 
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

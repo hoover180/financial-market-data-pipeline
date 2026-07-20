@@ -119,7 +119,7 @@ Full rationale — execution engine choice, table/check scoping — in
 - [x] Phase 4 — DuckDB local validation
 - [x] Phase 5 — dbt + Gold layer
 - [x] Phase 6 — Great Expectations
-- [ ] Phase 7 — Terraform
+- [x] Phase 7 — Terraform
 - [ ] Phase 8 — Airflow orchestration
 - [ ] Phase 9 — CI/CD
 - [ ] Phase 10 — Performance & scaling documentation

@@ -166,3 +166,22 @@ This is stronger validation than a synthetic test would have provided — the de
 **Decision: secrets via `gx/uncommitted/config_variables.yml`, not embedded in the connection string.** An initial attempt to reference `${DBT_DATABRICKS_TOKEN}` directly inside the Python-constructed connection string resulted in GE resolving and writing the literal token to the committed `great_expectations.yml` regardless — GE's Fluent API resolves the full connection string against the environment at datasource-creation time (to validate connectivity) and serializes the resolved result back to disk, not the original template. The documented mechanism is instead to define the credential in `config_variables.yml` (itself excluded from git by GE's default `.gitignore`, and itself sourcing `${DBT_DATABRICKS_TOKEN}` from the environment) and reference it via `${DATABRICKS_TOKEN}` in the connection string. Confirmed working via direct pattern search on the committed file (`dapi` absent, `${DATABRICKS_TOKEN}` present, unresolved) before committing.
 
 ---
+
+## Terraform — Resource Scope and Provider Auth
+
+**Decision: Databricks-native Unity Catalog resources, not cloud-provider resources (S3/IAM).** The original build plan's "storage bucket + IAM role/policy" framing assumed a general-purpose cloud account (AWS/Azure/GCP) alongside Databricks. This project doesn't have one, and Databricks Free Edition doesn't expose cluster/compute provisioning or account-level cloud infrastructure APIs. Rather than introduce a second cloud account and a new billing surface solely to satisfy a literal bucket-and-IAM-role checkbox, the same storage-plus-access-control pattern was mapped onto Unity Catalog's own native resource types via the `databricks` Terraform provider:
+
+- `databricks_schema` — a governed Unity Catalog schema, functioning as the storage-equivalent resource (the container Delta tables live in, analogous to a bucket).
+- `databricks_grants` — a `USE_SCHEMA` + `SELECT` grant on that schema, functioning as the IAM-equivalent resource (access control on the storage resource).
+
+This keeps the two-resource scope from the build plan intact and stays entirely inside the existing OAuth-based `financial_market_data_pipeline` CLI profile already used elsewhere in this project — no new cloud account, no new auth surface, no new billing risk.
+
+**Decision: local state, gitignored; provider auth via existing CLI profile.** State is kept local rather than in a remote backend (e.g., Terraform Cloud, an S3 backend) — for a two-resource demonstration, the operational overhead of a remote backend isn't justified by what it's protecting. `terraform.tfstate` and `.tfstate.backup` are gitignored alongside `.terraform/` and `*.tfvars`.
+
+Provider auth uses the existing `financial_market_data_pipeline` CLI profile — the same mechanism `databricks-connect` already uses elsewhere in this project — so no token appears in any committed file. `terraform.tfvars.example` documents the expected shape of the one non-default variable (`grant_principal`) without exposing the real value.
+
+**Validation: full lifecycle exercised, not just a one-way apply.** `terraform destroy` followed immediately by `terraform apply` was run and verified against the live workspace on 2026-07-19 — both completed cleanly (`2 destroyed` / `2 added`), and the `terraform_managed` schema and its grants were independently confirmed in Catalog Explorer after the final apply. This was a deliberate choice over stopping at a single successful `apply`: it demonstrates the configuration is actually reproducible from a clean slate, not just that it worked once.
+
+**What a full production build would additionally provision (documented, not built):** SQL warehouse sizing/autoscaling configuration, network/private-link configuration, workspace-level admin settings, secret scopes, and cluster policies. These are either not exposed on Databricks Free Edition's provisioning model or deliberately out of scope for a two-resource IaC demonstration — see `terraform/README.md` for the full breakdown.
+
+---
