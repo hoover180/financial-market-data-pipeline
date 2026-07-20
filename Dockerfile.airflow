@@ -1,0 +1,23 @@
+FROM apache/airflow:2.9.0
+
+RUN pip install --no-cache-dir \
+    "apache-airflow==2.9.0" \
+    "astronomer-cosmos[docker]" \
+    "apache-airflow-providers-databricks"
+
+RUN pip install --no-cache-dir databricks-connect
+
+RUN pip install --no-cache-dir \
+    pandas \
+    yfinance \
+    requests \
+    python-dotenv \
+    "jsonschema==4.26.0"
+
+# databricks-connect's dependency chain pulls setuptools up to 83.x, which
+# dropped the pkg_resources module the OpenLineage plugin (bundled with
+# apache-airflow-providers-databricks/astronomer-cosmos) still imports --
+# breaking the webserver plugin, not DAG execution, but worth a clean fix.
+# Forced back down as the last layer, after everything else is installed,
+# so nothing upstream can silently re-upgrade it again.
+RUN pip install --no-cache-dir --force-reinstall "setuptools==70.0.0"

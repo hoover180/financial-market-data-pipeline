@@ -1,5 +1,85 @@
-version: "3.8"
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: "XJ6fLo-Xp-arUXhWXPVlHesaeBcLj7DSIMIZEMHmaTo="
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+    # Pass-through so DAG tasks can call src/ scripts and hit Databricks
+    DATABRICKS_CONFIG_FILE: /home/airflow/.databrickscfg
+    DATABRICKS_CONFIG_PROFILE: airflow_pat
+    DBT_DATABRICKS_TOKEN: ${DBT_DATABRICKS_TOKEN}
+    FRED_API_KEY: ${FRED_API_KEY}
+    PYTHONPATH: /opt/airflow/src
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./src:/opt/airflow/src
+    - ./config:/opt/airflow/config
+    - ./sql:/opt/airflow/sql
+    - ./dbt:/opt/airflow/dbt # confirm this line exists — Cosmos needs it
+    - ${USERPROFILE}/.databrickscfg:/home/airflow/.databrickscfg:ro
+    - /var/run/docker.sock:/var/run/docker.sock # for DockerExecutionConfig
+  depends_on:
+    postgres:
+      condition: service_healthy
+
 services:
-  airflow:
-    image: apache/airflow:2.9.0
-    # placeholder
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Michael \
+          --lastname Hoover \
+          --role Admin \
+          --email hoover365@outlook.com \
+          --password admin
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-db-volume:
