@@ -9,6 +9,9 @@ terraform/terraform.tfstate.backup
 terraform/*.tfvars
 !terraform/terraform.tfvars.example
 
+# Docker — staged profiles.yml copy (created/removed by scripts/build_manifest.ps1)
+/profiles.yml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

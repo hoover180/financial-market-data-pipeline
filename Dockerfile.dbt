@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1.7
+
+FROM python:3.12-slim
+
+RUN pip install --no-cache-dir dbt-databricks
+
+WORKDIR /dbt
+COPY dbt/financial_market_data_pipeline /dbt
+
+# profiles.yml is staged into the build context by scripts/build_manifest.ps1
+# (gitignored — never committed). Uses env_var() for the token, so the file
+# itself contains no secret; the secret only enters via --mount=type=secret below.
+COPY profiles.yml /root/.dbt/profiles.yml
+
+# BuildKit secret mount: token is available only for this RUN step, as a
+# tmpfs file at /run/secrets/dbt_token — never written to an image layer,
+# never visible in `docker history`.
+RUN --mount=type=secret,id=dbt_token \
+    export DBT_DATABRICKS_TOKEN=$(cat /run/secrets/dbt_token) && \
+    dbt deps --profiles-dir /root/.dbt --project-dir /dbt && \
+    dbt parse --profiles-dir /root/.dbt --project-dir /dbt
+
+CMD ["dbt", "run", "--profiles-dir", "/root/.dbt", "--project-dir", "/dbt"]
