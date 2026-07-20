@@ -47,6 +47,11 @@ flowchart LR
         DDB[(DuckDB mirror)]
     end
 
+    subgraph Orchestration[Orchestration - done]
+        FP[financial_pipeline DAG]
+        DL[dbt_lineage DAG - Cosmos]
+    end
+
     YF --> BE --> SE
     FRED --> BT --> ST
     YF --> BD --> DS
@@ -58,6 +63,10 @@ flowchart LR
     G -.checks.-> GE
     Bronze -.mirror.-> DDB
     Silver -.mirror.-> DDB
+    FP -.orchestrates.-> Bronze
+    FP -.orchestrates.-> Silver
+    FP -.triggers.-> DL
+    DL -.orchestrates.-> Gold
 ```
 
 _Full architecture writeup with engineering decisions coming in Phase 11._
@@ -90,6 +99,36 @@ tests) and `tests/verify.py`.
 Full rationale — execution engine choice, table/check scoping — in
 `docs/data_modeling_decisions.md`.
 
+### Orchestration
+
+Two Airflow DAGs run in a local Docker Compose stack (Postgres, scheduler,
+webserver): `financial_pipeline` (ingest → Silver → dbt trigger, with
+retries and an opt-in failure-injection demo) and `dbt_lineage`, an
+[astronomer-cosmos](https://astronomer.github.io/astronomer-cosmos/)
+`DbtDag` that auto-generates one Airflow task per dbt model from the
+project's manifest, running each in an isolated Docker container rather
+than inside the Airflow environment itself.
+
+<p>
+<img src="./docs/screenshots/dbt_lineage_cosmos.png" alt="Cosmos-generated dbt lineage DAG, all tasks succeeded">
+</p>
+
+`financial_pipeline` demonstrates retry-based recovery via an opt-in
+Airflow Variable (`PHASE8_INJECT_FAILURE`) that deliberately fails
+`transform_silver` on its first attempt, then succeeds on retry:
+
+<p>
+<img src="./docs/screenshots/airflow_dag_success.png" alt="financial_pipeline DAG, full clean run, all tasks succeeded">
+</p>
+
+<p>
+<img src="./docs/screenshots/airflow_dag_recovery.png" alt="transform_silver task audit log showing running, failed, running, success">
+</p>
+
+Full rationale — execution mode, manifest-based task loading, runtime
+credential handling, headless container auth — in
+`docs/data_modeling_decisions.md`.
+
 ## Tech Stack
 
 | Tool                             | Purpose                                |
@@ -99,6 +138,7 @@ Full rationale — execution engine choice, table/check scoping — in
 | DuckDB                           | Local dev-loop validation              |
 | Great Expectations               | Data quality checks                    |
 | Airflow                          | Orchestration (retries, logging)       |
+| astronomer-cosmos                | dbt orchestration — auto-generated per-model task DAG |
 | Terraform                        | IaC — storage + IAM                    |
 | GitHub Actions                   | CI/CD — dbt tests, SQL lint            |
 
@@ -120,7 +160,7 @@ Full rationale — execution engine choice, table/check scoping — in
 - [x] Phase 5 — dbt + Gold layer
 - [x] Phase 6 — Great Expectations
 - [x] Phase 7 — Terraform
-- [ ] Phase 8 — Airflow orchestration
+- [x] Phase 8 — Airflow orchestration
 - [ ] Phase 9 — CI/CD
 - [ ] Phase 10 — Performance & scaling documentation
 - [ ] Phase 11 — Documentation & README
