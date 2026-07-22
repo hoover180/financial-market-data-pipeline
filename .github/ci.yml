@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["sql/**", "dbt/**", "src/**", "tests/**", ".github/workflows/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  sql-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install lint dependencies
+        run: pip install -r requirements-ci-lint.txt
+      - name: Lint raw SQL
+        run: sqlfluff lint sql/ --dialect databricks --templater jinja
+      - name: Lint dbt models
+        run: sqlfluff lint dbt/financial_market_data_pipeline/models/ --dialect databricks --templater dbt
+
+  dbt-parse-and-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dbt dependencies
+        run: pip install -r requirements-ci-dbt.txt
+      - name: dbt parse
+        working-directory: dbt/financial_market_data_pipeline
+        run: dbt parse --target ci
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+          DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      - name: Warehouse-independent unit tests
+        run: pytest tests/test_transform.py -v
