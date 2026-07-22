@@ -131,6 +131,19 @@ Full rationale — execution mode, manifest-based task loading, runtime
 credential handling, headless container auth — in
 `docs/data_modeling_decisions.md`.
 
+### Performance & Scaling
+
+Partition pruning, ZORDER, and Liquid Clustering were benchmarked against a
+synthetic dataset sized to exercise Delta Lake's storage-layer optimizations
+(real Bronze/Silver tables are dev-scale and too small to demonstrate these
+patterns). Partitioning by `year_month` reduced bytes read by 97.9% for a
+representative date-range query. ZORDER and Liquid Clustering produced
+structural null results at this data volume — investigated and explained
+using Delta's own operation metrics rather than left unexplained.
+
+Full methodology, results, and screenshots in
+`docs/performance_and_scaling.md`.
+
 ## Tech Stack
 
 | Tool                             | Purpose                                               |
@@ -164,6 +177,6 @@ credential handling, headless container auth — in
 - [x] Phase 7 — Terraform
 - [x] Phase 8 — Airflow orchestration
 - [x] Phase 9 — CI/CD
-- [ ] Phase 10 — Performance & scaling documentation
+- [x] Phase 10 — Performance & scaling documentation
 - [ ] Phase 11 — Documentation & README
 - [ ] Phase 12 — Polish & publish
