@@ -1,5 +1,7 @@
 # Financial Market Data Pipeline
 
+![CI](https://github.com/hoover180/financial-market-data-pipeline/actions/workflows/ci.yml/badge.svg)
+
 > ## Business Problem
 >
 > Institutional investors and quantitative analysts need reliable historical
@@ -131,16 +133,16 @@ credential handling, headless container auth — in
 
 ## Tech Stack
 
-| Tool                             | Purpose                                |
-| -------------------------------- | -------------------------------------- |
-| Databricks (PySpark, Delta Lake) | Bronze/Silver/Gold medallion ingestion |
-| dbt-core                         | Staging + Gold marts, tests, docs      |
-| DuckDB                           | Local dev-loop validation              |
-| Great Expectations               | Data quality checks                    |
-| Airflow                          | Orchestration (retries, logging)       |
-| astronomer-cosmos                | dbt orchestration — auto-generated per-model task DAG |
-| Terraform                        | IaC — storage + IAM                    |
-| GitHub Actions                   | CI/CD — dbt tests, SQL lint            |
+| Tool                             | Purpose                                               |
+| -------------------------------- | ----------------------------------------------------- |
+| Databricks (PySpark, Delta Lake) | Bronze/Silver/Gold medallion ingestion                |
+| dbt-core                         | Staging + Gold marts, tests, docs                     |
+| DuckDB                           | Local dev-loop validation                             |
+| Great Expectations               | Data quality checks                                   |
+| Airflow                          | Orchestration (retries, logging)                      |
+| Astronomer Cosmos                | dbt orchestration — auto-generated per-model task DAG |
+| Terraform                        | IaC — Unity Catalog schema + grants                   |
+| GitHub Actions                   | CI/CD — dbt tests, SQL lint                           |
 
 **Certificates:**
 
@@ -161,7 +163,7 @@ credential handling, headless container auth — in
 - [x] Phase 6 — Great Expectations
 - [x] Phase 7 — Terraform
 - [x] Phase 8 — Airflow orchestration
-- [ ] Phase 9 — CI/CD
+- [x] Phase 9 — CI/CD
 - [ ] Phase 10 — Performance & scaling documentation
 - [ ] Phase 11 — Documentation & README
 - [ ] Phase 12 — Polish & publish
