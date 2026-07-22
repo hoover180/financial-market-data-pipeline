@@ -19,8 +19,30 @@ jobs:
         run: pip install -r requirements-ci-lint.txt
       - name: Lint raw SQL
         run: sqlfluff lint sql/ --dialect databricks --templater jinja
+      - name: Create dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          financial_market_data_pipeline:
+            target: ci
+            outputs:
+              ci:
+                type: databricks
+                catalog: financial_market_data
+                schema: ci
+                host: "${DATABRICKS_HOST}"
+                http_path: "${DATABRICKS_HTTP_PATH}"
+                token: "${DBT_DATABRICKS_TOKEN}"
+                auth_type: token
+                threads: 4
+          EOF
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+          DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
       - name: Lint dbt models
-        run: sqlfluff lint dbt/financial_market_data_pipeline/models/ --dialect databricks --templater dbt
+        working-directory: dbt/financial_market_data_pipeline
+        run: sqlfluff lint models/ --dialect databricks --templater dbt
 
   dbt-parse-and-unit-tests:
     runs-on: ubuntu-latest
@@ -31,12 +53,29 @@ jobs:
           python-version: "3.12"
       - name: Install dbt dependencies
         run: pip install -r requirements-ci-dbt.txt
-      - name: dbt parse
-        working-directory: dbt/financial_market_data_pipeline
-        run: dbt parse --target ci
+      - name: Create dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          financial_market_data_pipeline:
+            target: ci
+            outputs:
+              ci:
+                type: databricks
+                catalog: financial_market_data
+                schema: ci
+                host: "${DATABRICKS_HOST}"
+                http_path: "${DATABRICKS_HTTP_PATH}"
+                token: "${DBT_DATABRICKS_TOKEN}"
+                auth_type: token
+                threads: 4
+          EOF
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
           DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      - name: dbt parse
+        working-directory: dbt/financial_market_data_pipeline
+        run: dbt parse --target ci
       - name: Warehouse-independent unit tests
         run: pytest tests/test_transform.py -v
