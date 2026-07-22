@@ -1,0 +1,11 @@
+[sqlfluff]
+templater = dbt
+dialect = databricks
+exclude_rules = ST05
+
+[sqlfluff:templater:dbt]
+project_dir = dbt/financial_market_data_pipeline
+profiles_dir = dbt/financial_market_data_pipeline
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower

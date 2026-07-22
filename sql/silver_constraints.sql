@@ -9,8 +9,12 @@
 -- applies to any future writer, not just transform.py. See
 -- docs/data_modeling_decisions.md for the full rationale.
 
-ALTER TABLE financial_market_data.dev.silver_equities ALTER COLUMN symbol SET NOT NULL;
-ALTER TABLE financial_market_data.dev.silver_equities ALTER COLUMN date SET NOT NULL;
+alter table financial_market_data.dev.silver_equities
+    alter column symbol set not null;
+alter table financial_market_data.dev.silver_equities
+    alter column date set not null;
 
-ALTER TABLE financial_market_data.dev.silver_treasury_yields ALTER COLUMN series_id SET NOT NULL;
-ALTER TABLE financial_market_data.dev.silver_treasury_yields ALTER COLUMN date SET NOT NULL;
+alter table financial_market_data.dev.silver_treasury_yields
+    alter column series_id set not null;
+alter table financial_market_data.dev.silver_treasury_yields
+    alter column date set not null;
