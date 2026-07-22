@@ -67,11 +67,11 @@ transferable finding._
 | Liquid Clustering          | Symbol only              | 1 / 1      | 0            | 0               | 11.44 MB   | Structural ceiling — see below           |
 
 <p>
-<img src="./docs/screenshots/perf_01_baseline_unpartitioned.png" alt="Unpartitioned baseline query details: 50 files read, 23.40 MB">
+<img src="./screenshots/perf_01_baseline_unpartitioned.png" alt="Unpartitioned baseline query details: 50 files read, 23.40 MB">
 </p>
 
 <p>
-<img src="./docs/screenshots/perf_02_partitioned.png" alt="Partitioned by year_month query details: 8 files read, 496.21 KB, 97.9% bytes reduction">
+<img src="./screenshots/perf_02_partitioned.png" alt="Partitioned by year_month query details: 8 files read, 496.21 KB, 97.9% bytes reduction">
 </p>
 
 ### Observations
@@ -114,7 +114,7 @@ files across all 96 partitions — no benefit from partitioning (the filter
 doesn't touch `year_month`) and no data-skipping yet, since ZORDER hadn't run.
 
 <p>
-<img src="./docs/screenshots/perf_03a_zorder_before.png" alt="Symbol-filtered query before OPTIMIZE ZORDER: 672 files read across all 96 partitions">
+<img src="./screenshots/perf_03a_zorder_before.png" alt="Symbol-filtered query before OPTIMIZE ZORDER: 672 files read across all 96 partitions">
 </p>
 
 Running `OPTIMIZE ... ZORDER BY (symbol)` compacted those 768 files down to
@@ -128,7 +128,7 @@ compaction had already eliminated the precondition (multiple files per
 partition) that data skipping requires.
 
 <p>
-<img src="./docs/screenshots/perf_03b_zorder_after.png" alt="Symbol-filtered query after OPTIMIZE ZORDER: 96 files read, 0 pruned">
+<img src="./screenshots/perf_03b_zorder_after.png" alt="Symbol-filtered query after OPTIMIZE ZORDER: 96 files read, 0 pruned">
 </p>
 
 The apparent 86% file-count drop between the "before" and "after" ZORDER runs
@@ -142,7 +142,7 @@ against the same post-compaction table confirms partition pruning remains
 fully intact: 1 file read, 95 pruned, 1 of 96 partitions touched.
 
 <p>
-<img src="./docs/screenshots/perf_03c_zorder_combined.png" alt="Combined date and symbol filter post-compaction: 1 file read, 95 pruned, partition pruning intact">
+<img src="./screenshots/perf_03c_zorder_combined.png" alt="Combined date and symbol filter post-compaction: 1 file read, 95 pruned, partition pruning intact">
 </p>
 
 ### Liquid Clustering
@@ -162,7 +162,7 @@ result, since no partition- or file-level elimination is structurally
 possible with one file.
 
 <p>
-<img src="./docs/screenshots/perf_04_liquid.png" alt="Liquid Clustering date-range query: 1 file read, single-file structural ceiling">
+<img src="./screenshots/perf_04_liquid.png" alt="Liquid Clustering date-range query: 1 file read, single-file structural ceiling">
 </p>
 
 Liquid Clustering is designed to provide its greatest benefit on large,
