@@ -19,6 +19,6 @@ select
     r.daily_return,
     y.yield_value as treasury_10y_yield,
     y.yield_change as treasury_10y_yield_change
-from returns r
-left join yields y
+from returns as r
+left join yields as y
     on r.date = y.date
