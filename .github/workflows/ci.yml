@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install lint dependencies
-        run: pip install -r requirements-ci-lint.txt
+        run: pip install -r requirements-ci-lint.txt -r requirements-ci-dbt.txt
       - name: Lint raw SQL
         run: sqlfluff lint sql/ --dialect databricks --templater jinja
       - name: Create dbt profiles.yml
