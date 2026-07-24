@@ -6,7 +6,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from extract import with_retry, _is_retryable_http_error
+from retry_utils import with_retry, _is_retryable_http_error
 
 
 def make_http_error(status_code):
