@@ -78,4 +78,4 @@ jobs:
         working-directory: dbt/financial_market_data_pipeline
         run: dbt parse --target ci
       - name: Warehouse-independent unit tests
-        run: pytest tests/test_transform.py -v
+        run: pytest tests/test_transform.py tests/test_extract_retry.py -v
