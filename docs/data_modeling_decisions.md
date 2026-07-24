@@ -2,6 +2,8 @@
 
 > This document records every significant modeling choice made in this project, with explicit rationale. Intended as both a project record and an interview reference.
 
+See also [ADR-001](adr/0001-delta-lake-vs-parquet.md) for the Delta Lake vs. Parquet decision, recorded separately in full ADR format.
+
 ---
 
 ## Load Strategy: Full-Replace (`overwrite`) — Bronze and Silver
